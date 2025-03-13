@@ -1,7 +1,7 @@
 /**
  * Prompt for resume analysis that extracts structured information from a resume
  * This is used by the Document Analyzer Agent
- * 
+ *
  * @param {string} resumeText - The raw text of the resume to analyze
  * @returns {string} The prompt to send to Gemini API
  */
@@ -23,7 +23,15 @@ Extract all relevant information and format your response as a comprehensive JSO
     portfolio: Portfolio/website URL if present
     github: GitHub profile if present
   }
-- professionalSummary: Comprehensive professional summary or objective statement
+- summaries: [
+    Array of all summary sections found in the resume, each containing:
+    {
+      type: Type of summary ("summary", "technical_summary", "professional_summary", etc.)
+      heading: Exact heading text as it appears in the resume (including any punctuation)
+      content: The actual content of the summary do not add any extra special character
+      format: The format of the content ("paragraph", "bullets", or "mixed")
+    }
+  ]
 - experience: [
     Array of work experiences, each containing:
     {
@@ -33,6 +41,8 @@ Extract all relevant information and format your response as a comprehensive JSO
       startDate: Start date (MM/YYYY format if possible)
       endDate: End date or "Present" (MM/YYYY format if possible)
       duration: Total duration (e.g., "3 years 2 months")
+      description: Project or role description paragraph if present (often found after job title and before responsibilities)
+      environment: Technical environment, tools and technologies used (often found at the end of the experience entry)
       responsibilities: Array of bullet points describing responsibilities/achievements
       achievements: Array of quantifiable achievements if separated from responsibilities
       keywords: Array of important keywords/skills demonstrated in this role
@@ -89,8 +99,33 @@ Extract all relevant information and format your response as a comprehensive JSO
 - careerLevel: Estimated career level (entry, mid, senior, executive, etc.)
 - industrySectors: Array of industry sectors this resume appears aligned with
 
+Important notes for experience extraction:
+1. Pay close attention to sections labeled "Description:", "Project Description:", "Client:", or similar, which often contain project context or role overview
+2. Look for sections labeled "Environment:", "Technical Environment:", "Technologies:", "Tech Stack:", or similar at the end of experience entries
+3. Only extract description/environment fields if they are explicitly present in the resume
+4. If these sections are not clearly present, set the corresponding fields to an empty string ("")
+5. Do not attempt to generate or infer description/environment content if not explicitly present
+6. Common patterns for description sections:
+   - Text immediately following job title/company and before responsibilities
+   - Paragraphs beginning with "Client:" or "Project:"
+   - Sections explicitly labeled as "Description:"
+7. Common patterns for environment sections:
+   - Lists of technologies at the end of an experience entry
+   - Sections beginning with "Environment:", "Tech Stack:", or "Technologies:"
+   - Comma-separated lists of technical skills specific to that role
+
+Important notes for summary extraction:
+1. Look for all sections that could be summaries (Summary, Technical Summary, Professional Summary, etc.)
+2. Preserve the exact heading text as it appears in the resume
+3. For each summary:
+   - Determine if it's a paragraph, bullet points, or mixed format
+   - Keep the original formatting and structure
+   - Identify the type of summary based on its content and heading
+4. If a resume has multiple summaries, include all of them in the summaries array
+5. Maintain the order of summaries as they appear in the resume
+
 Only extract information that's actually present in the resume. Be thorough and precise in identifying all relevant qualifications, experiences and skills.
 `;
 };
 
-module.exports = generateAnalyzeResumePrompt; 
+module.exports = generateAnalyzeResumePrompt;

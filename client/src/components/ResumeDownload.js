@@ -130,7 +130,70 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
   },
+  bulletList: {
+    marginBottom: 10,
+  },
+  bulletItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
 });
+
+// Helper function to render summary content based on format
+const renderSummaryContent = (summary) => {
+  if (!summary) return null;
+
+  switch (summary.format) {
+    case "bullets":
+      return (
+        <View style={styles.bulletList}>
+          {summary.content.split("\n").map((line, index) => {
+            const cleanLine = line.replace(/^[\s]*[•\-\*]\s*/, "").trim();
+            if (!cleanLine) return null;
+
+            return (
+              <View key={index} style={styles.bulletItem}>
+                <Text style={styles.bullet}>• </Text>
+                <Text style={{ fontSize: 10, flex: 1 }}>{cleanLine}</Text>
+              </View>
+            );
+          })}
+        </View>
+      );
+
+    case "mixed":
+      return (
+        <View>
+          {summary.content.split("\n").map((line, index) => {
+            const isBullet = /^[\s]*[•\-\*]/.test(line);
+            const cleanLine = isBullet
+              ? line.replace(/^[\s]*[•\-\*]\s*/, "").trim()
+              : line.trim();
+
+            if (!cleanLine) return null;
+
+            if (isBullet) {
+              return (
+                <View key={index} style={styles.bulletItem}>
+                  <Text style={styles.bullet}>• </Text>
+                  <Text style={{ fontSize: 10, flex: 1 }}>{cleanLine}</Text>
+                </View>
+              );
+            }
+
+            return (
+              <Text key={index} style={{ fontSize: 10, marginBottom: 4 }}>
+                {cleanLine}
+              </Text>
+            );
+          })}
+        </View>
+      );
+
+    default: // paragraph
+      return <Text style={{ fontSize: 10 }}>{summary.content}</Text>;
+  }
+};
 
 // Resume PDF Document Component
 const ResumePDF = ({ resume }) => {
@@ -246,13 +309,13 @@ const ResumePDF = ({ resume }) => {
           )}
         </View>
 
-        {/* Summary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Summary</Text>
-          <Text style={{ fontSize: 10 }}>
-            {resume.summary || "No summary provided"}
-          </Text>
-        </View>
+        {/* Summaries */}
+        {resume.summaries?.map((summary, index) => (
+          <View key={index} style={styles.section}>
+            <Text style={styles.sectionTitle}>{summary.heading}</Text>
+            {renderSummaryContent(summary)}
+          </View>
+        ))}
 
         {/* Experience */}
         <View style={styles.section}>
@@ -532,13 +595,48 @@ const ResumeDownload = () => {
           </div>
         </div>
 
-        <!-- Summary -->
-        <div style="margin-bottom: 10px;">
-          <h2 style="font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin: 0 0 8px 0;">Summary</h2>
-          <div style="font-size: 12px;">${
-            optimizedResume.summary || "No summary provided"
-          }</div>
-        </div>
+        <!-- Summaries -->
+        ${optimizedResume.summaries
+          ?.map(
+            (summary) => `
+          <div style="margin-bottom: 10px;">
+            <h2 style="font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin: 0 0 8px 0;">${
+              summary.heading
+            }</h2>
+            ${
+              summary.format === "bullets"
+                ? `<ul style="margin: 0; padding-left: 20px;">
+                  ${summary.content
+                    .split("\\n")
+                    .filter((line) => line.trim())
+                    .map(
+                      (line) =>
+                        `<li>${line
+                          .replace(/^[\s]*[•\-\*]\s*/, "")
+                          .trim()}</li>`
+                    )
+                    .join("")}
+                </ul>`
+                : summary.format === "mixed"
+                ? summary.content
+                    .split("\\n")
+                    .map((line) => {
+                      const isBullet = /^[\s]*[•\-\*]/.test(line);
+                      const cleanLine = isBullet
+                        ? line.replace(/^[\s]*[•\-\*]\s*/, "").trim()
+                        : line.trim();
+                      if (!cleanLine) return "";
+                      return isBullet
+                        ? `<div style="margin-left: 20px;">• ${cleanLine}</div>`
+                        : `<div>${cleanLine}</div>`;
+                    })
+                    .join("")
+                : `<div>${summary.content}</div>`
+            }
+          </div>
+        `
+          )
+          .join("")}
 
         <!-- Experience -->
         <div style="margin-bottom: 10px;">
@@ -858,11 +956,48 @@ const ResumeDownload = () => {
                 ${formatContactInfo()}
               </div>
               
-              <!-- Summary -->
-              <div class="section">
-                <h2>Summary</h2>
-                <div>${optimizedResume?.summary || "No summary provided"}</div>
-              </div>
+              <!-- Summaries -->
+              ${optimizedResume.summaries
+                ?.map(
+                  (summary) => `
+                <div style="margin-bottom: 10px;">
+                  <h2 style="font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin: 0 0 8px 0;">${
+                    summary.heading
+                  }</h2>
+                  ${
+                    summary.format === "bullets"
+                      ? `<ul style="margin: 0; padding-left: 20px;">
+                        ${summary.content
+                          .split("\\n")
+                          .filter((line) => line.trim())
+                          .map(
+                            (line) =>
+                              `<li>${line
+                                .replace(/^[\s]*[•\-\*]\s*/, "")
+                                .trim()}</li>`
+                          )
+                          .join("")}
+                      </ul>`
+                      : summary.format === "mixed"
+                      ? summary.content
+                          .split("\\n")
+                          .map((line) => {
+                            const isBullet = /^[\s]*[•\-\*]/.test(line);
+                            const cleanLine = isBullet
+                              ? line.replace(/^[\s]*[•\-\*]\s*/, "").trim()
+                              : line.trim();
+                            if (!cleanLine) return "";
+                            return isBullet
+                              ? `<div style="margin-left: 20px;">• ${cleanLine}</div>`
+                              : `<div>${cleanLine}</div>`;
+                          })
+                          .join("")
+                      : `<div>${summary.content}</div>`
+                  }
+                </div>
+              `
+                )
+                .join("")}
               
               <!-- Experience -->
               <div class="section">

@@ -68,6 +68,8 @@ const extractJsonFromText = (text) => {
  */
 const extractWithCleaning = (text) => {
   try {
+    console.log("Attempting aggressive JSON cleaning...");
+
     // Remove non-printable characters and normalize whitespace
     let cleanedText = text
       .replace(/[\x00-\x1F\x7F-\x9F]/g, "") // Remove control characters
@@ -82,6 +84,16 @@ const extractWithCleaning = (text) => {
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
       cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
 
+      // Log portion of JSON before cleaning for diagnostic purposes
+      if (cleanedText.length > 200) {
+        console.log(
+          "Sample of JSON before cleaning:",
+          cleanedText.substring(0, 100) +
+            "..." +
+            cleanedText.substring(cleanedText.length - 100)
+        );
+      }
+
       // Normalize whitespace around JSON structural elements
       cleanedText = cleanedText
         .replace(/\s*([{}\[\],:])\s*/g, (match, p1) => {
@@ -91,8 +103,15 @@ const extractWithCleaning = (text) => {
         })
         // Remove trailing commas in arrays and objects
         .replace(/,\s*([}\]])/g, "$1")
-        // Convert single quotes to double quotes for keys
-        .replace(/([{,])\s*'([^']+)'\s*:/g, '$1"$2":');
+        // Fix common issue with arrays - trailing comma after last element
+        .replace(/,(\s*\])/g, "$1")
+        // Fix missing commas between array elements that are objects
+        .replace(/}(\s*){/g, "}, $1{")
+        // Fix missing commas between array elements that are strings/numbers
+        .replace(/"(\s*)["{[](?!:)/g, '", $1')
+        // Convert single quotes to double quotes for keys and string values
+        .replace(/([{,]\s*)'([^']+)'\s*:/g, '$1"$2":')
+        .replace(/:\s*'([^']*)'/g, ': "$1"');
 
       // Fix unbalanced structure if needed
       const openBraces = (cleanedText.match(/{/g) || []).length;
@@ -100,25 +119,224 @@ const extractWithCleaning = (text) => {
       const openBrackets = (cleanedText.match(/\[/g) || []).length;
       const closeBrackets = (cleanedText.match(/\]/g) || []).length;
 
+      console.log(
+        `JSON structure check - Braces: ${openBraces}/${closeBraces}, Brackets: ${openBrackets}/${closeBrackets}, Quotes: ${
+          (cleanedText.match(/"/g) || []).length
+        }`
+      );
+
+      // Fix unbalanced braces/brackets
       if (openBraces > closeBraces) {
         cleanedText += "}".repeat(openBraces - closeBraces);
       }
 
       if (openBrackets > closeBrackets) {
-        // This is a simplified approach - in reality this is very difficult to fix correctly
-        cleanedText = cleanedText.replace(/\[\s*(?=\}|$)/g, "[]");
+        // Attempt to fix unclosed arrays
+        // First try to find arrays that should be closed
+        let fixedText = cleanedText;
+        let unclosedArrays = openBrackets - closeBrackets;
+
+        // Use a regex to find potential unclosed arrays
+        const arrayRegex = /\[[^\]]*(?=\}|$)/g;
+        let match;
+        let matchCount = 0;
+
+        while (
+          (match = arrayRegex.exec(fixedText)) !== null &&
+          matchCount < unclosedArrays
+        ) {
+          const pos = match.index + match[0].length;
+          fixedText =
+            fixedText.substring(0, pos) + "]" + fixedText.substring(pos);
+          matchCount++;
+          // Update the regex lastIndex to account for the inserted bracket
+          arrayRegex.lastIndex += 1;
+        }
+
+        // If we couldn't find all unclosed arrays, add remaining closing brackets at the end
+        if (matchCount < unclosedArrays) {
+          fixedText += "]".repeat(unclosedArrays - matchCount);
+        }
+
+        cleanedText = fixedText;
       }
 
+      // Check for and fix unterminated string literals
+      const quoteCounts = (cleanedText.match(/"/g) || []).length;
+      if (quoteCounts % 2 !== 0) {
+        console.log("Detected unbalanced quotes, attempting to fix...");
+        // Try to find unterminated strings and fix them
+        cleanedText = cleanedText.replace(/("(?:[^"\\]|\\.)*$)/g, '$1"');
+      }
+
+      // Final attempt at manual repair for array elements
       try {
         return JSON.parse(cleanedText);
-      } catch (cleanError) {
-        console.log(`Cleaning attempt failed: ${cleanError.message}`);
+      } catch (error) {
+        if (error.message.includes("position")) {
+          const errorPosition = parseInt(
+            error.message.match(/position (\d+)/)?.[1]
+          );
+          if (!isNaN(errorPosition)) {
+            console.log(
+              `Error at position ${errorPosition}, attempting targeted fix...`
+            );
+
+            // Extract the problematic segment around the error
+            const start = Math.max(0, errorPosition - 20);
+            const end = Math.min(cleanedText.length, errorPosition + 20);
+            const segment = cleanedText.substring(start, end);
+            console.log(`Problematic segment: "${segment}"`);
+
+            // Try to fix common issues at the error position
+            if (errorPosition < cleanedText.length) {
+              // Check if we're missing a comma between array elements
+              const beforeError = cleanedText.substring(
+                Math.max(0, errorPosition - 5),
+                errorPosition
+              );
+              const afterError = cleanedText.substring(
+                errorPosition,
+                Math.min(errorPosition + 5, cleanedText.length)
+              );
+
+              if (/["\d}][\s\n]*["{[]/.test(beforeError + afterError)) {
+                // Missing comma between array elements
+                cleanedText =
+                  cleanedText.substring(0, errorPosition) +
+                  "," +
+                  cleanedText.substring(errorPosition);
+                console.log("Inserted missing comma between array elements");
+              } else if (/,[\s\n]*[\]}]/.test(beforeError + afterError)) {
+                // Trailing comma before closing bracket
+                cleanedText =
+                  cleanedText.substring(0, errorPosition - 1) +
+                  cleanedText.substring(errorPosition);
+                console.log("Removed trailing comma before closing bracket");
+              }
+
+              try {
+                return JSON.parse(cleanedText);
+              } catch (retryError) {
+                console.log(`Targeted fix failed: ${retryError.message}`);
+              }
+            }
+          }
+        }
+
+        // Last resort: try a more aggressive approach by returning a simplified valid JSON
+        console.log(`Cleaning attempt failed: ${error.message}`);
+        console.log("Attempting last resort fallback method...");
+
+        try {
+          // Try to extract and rebuild the JSON structure
+          const fallbackJson = attemptFallbackParsing(cleanedText);
+          if (fallbackJson) {
+            console.log("Fallback parsing successful");
+            return fallbackJson;
+          }
+        } catch (fallbackError) {
+          console.log(`Fallback parsing failed: ${fallbackError.message}`);
+        }
       }
     }
 
     return null;
   } catch (error) {
     console.error("Error in extractWithCleaning:", error);
+    return null;
+  }
+};
+
+/**
+ * Last resort method to extract valid JSON by rebuilding the structure
+ * @param {string} text - The problematic JSON text
+ * @returns {Object|null} - A simplified but valid JSON object or null
+ */
+const attemptFallbackParsing = (text) => {
+  try {
+    // Try to extract the high-level structure first
+    const mainKeys = [];
+    const keyRegex = /"([^"]+)":\s*[{\[]?/g;
+    let match;
+
+    while ((match = keyRegex.exec(text)) !== null) {
+      if (!mainKeys.includes(match[1])) {
+        mainKeys.push(match[1]);
+      }
+    }
+
+    if (mainKeys.length === 0) {
+      return null;
+    }
+
+    // Build a simplified valid JSON with just the main keys
+    const simpleObject = {};
+
+    for (const key of mainKeys) {
+      // Try to extract the value for this key
+      const keyPattern = new RegExp(
+        `"${key}":\\s*([{\\[]?\\s*[\\s\\S]*?)(?=,"[^"]+":|\\s*}$)`,
+        "i"
+      );
+      const valueMatch = text.match(keyPattern);
+
+      if (valueMatch && valueMatch[1]) {
+        try {
+          // Try to parse the value if it's an object or array
+          if (
+            valueMatch[1].trim().startsWith("{") ||
+            valueMatch[1].trim().startsWith("[")
+          ) {
+            try {
+              simpleObject[key] = JSON.parse(
+                valueMatch[1].trim().replace(/,\s*$/, "")
+              );
+            } catch {
+              // If parsing fails, use a placeholder based on the type
+              simpleObject[key] = valueMatch[1].trim().startsWith("[")
+                ? []
+                : {};
+            }
+          } else {
+            // For simple values, clean and add them
+            let cleanValue = valueMatch[1].trim().replace(/,$/, "");
+
+            // Handle string values
+            if (cleanValue.startsWith('"') && cleanValue.endsWith('"')) {
+              simpleObject[key] = cleanValue.substring(
+                1,
+                cleanValue.length - 1
+              );
+            }
+            // Handle numeric values
+            else if (!isNaN(cleanValue)) {
+              simpleObject[key] = Number(cleanValue);
+            }
+            // Handle boolean values
+            else if (cleanValue === "true") {
+              simpleObject[key] = true;
+            } else if (cleanValue === "false") {
+              simpleObject[key] = false;
+            }
+            // Default to empty string
+            else {
+              simpleObject[key] = "";
+            }
+          }
+        } catch {
+          // Fallback to empty object or array
+          simpleObject[key] = "";
+        }
+      } else {
+        // Key exists but we couldn't extract a proper value
+        simpleObject[key] = "";
+      }
+    }
+
+    return simpleObject;
+  } catch (error) {
+    console.error("Error in attemptFallbackParsing:", error);
     return null;
   }
 };
@@ -251,30 +469,54 @@ const calculateAtsScore = (resumeData, jobData) => {
  */
 const getAtsFormattingRecommendations = () => {
   return {
-    recommendedSectionTitles: {
-      summary: ["Professional Summary", "Summary", "Profile"],
-      experience: ["Work Experience", "Professional Experience", "Experience"],
-      education: ["Education", "Academic Background"],
-      skills: ["Skills", "Technical Skills", "Core Competencies"],
-      certifications: ["Certifications", "Professional Certifications"],
+    sectionTitles: {
+      summary: [
+        "Professional Summary",
+        "Executive Summary",
+        "Summary",
+        "Profile",
+      ],
+      experience: [
+        "Experience",
+        "Work Experience",
+        "Professional Experience",
+        "Employment History",
+      ],
+      skills: [
+        "Skills",
+        "Technical Skills",
+        "Core Competencies",
+        "Areas of Expertise",
+      ],
+      education: [
+        "Education",
+        "Educational Background",
+        "Academic Credentials",
+      ],
+      certifications: [
+        "Certifications",
+        "Professional Certifications",
+        "Credentials",
+      ],
     },
-    formattingTips: [
-      "Use standard section headings that ATS systems can easily recognize",
-      "Avoid using tables, columns, headers/footers, or text boxes",
-      "Use standard fonts like Arial, Calibri, or Times New Roman",
-      "Save your resume as a .docx or .pdf file",
-      "Include your name and contact information at the top of the document",
-      "Use bullet points for listing responsibilities and achievements",
-      "Incorporate exact keywords from the job description",
+    formatting: [
+      "Use clean, consistent formatting with clear section headings",
+      "Ensure proper spacing between sections (10-12pt before, 4-6pt after)",
+      "Use standard fonts like Arial, Calibri, or Times New Roman (10-12pt)",
+      "Maintain consistent date formatting throughout (MM/YYYY recommended)",
+      "Use standard bullets (•) rather than custom symbols or emojis",
+      "Avoid text boxes, multiple columns, headers/footers, and tables",
+      "Keep margins between 0.5-1 inch on all sides",
+      "Save as PDF format to preserve formatting across ATS systems",
     ],
   };
 };
 
-// Export all functions
 module.exports = {
   extractJsonFromText,
-  calculateAtsScore,
-  getAtsFormattingRecommendations,
+  extractWithCleaning,
   cleanText,
   extractPatterns,
+  calculateAtsScore,
+  getAtsFormattingRecommendations,
 };

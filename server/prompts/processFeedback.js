@@ -1,7 +1,7 @@
 /**
  * Prompt for processing user feedback and incorporating it into the resume
  * This is used by the Feedback Interpreter Agent
- * 
+ *
  * @param {string} feedback - User feedback on the resume
  * @param {Object} currentResume - The current resume data
  * @returns {string} The prompt to send to Gemini API
@@ -33,10 +33,23 @@ When implementing the feedback:
 - If asked to add more soft skills, integrate them contextually into experience descriptions
 - If asked about formatting issues, modify content to better suit standard resume structures
 
+Important rules about description and environment fields:
+- ONLY modify description and environment fields if they already exist in the experience entries
+- If the client requests adding descriptions or environments to experiences that don't have these fields,
+  explain in the optimizationNotes that these fields weren't present in the original resume
+- Do not create new description or environment fields where they were null or empty in the input
+- You may enhance or modify existing description/environment content, but don't create these fields if they don't exist
+- This ensures consistency with the original resume structure and prevents adding content that wasn't authorized
+
+Pay special attention to these resume sections:
+- Summaries: Ensure they reflect the most relevant skills and experience for the target role
+- Skills: Organize in order of relevance to the target position
+- Experience responsibilities: Make them achievement-oriented and impactful
+
 Return the revised resume as a JSON object with carefully implemented changes that address the client's feedback while maintaining a natural, professional, human-written quality.
 
 The final resume should read coherently and maintain the same voice throughout, with new content seamlessly integrated with existing content.
 `;
 };
 
-module.exports = generateProcessFeedbackPrompt; 
+module.exports = generateProcessFeedbackPrompt;

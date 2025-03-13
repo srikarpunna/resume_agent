@@ -1,75 +1,115 @@
 export const _matchResume = {
-    "overallMatch": 65,
-    "categoryScores": {
-        "skills": 70,
-        "experience": 60,
-        "education": 50
+  overallMatch: 75,
+  categoryScores: {
+    skills: 80,
+    experience: 70,
+    education: 70,
+  },
+  keyStrengths: [
+    "Experience with Java, Spring Boot, and microservices architecture",
+    "Cloud development experience with AWS",
+    "Experience with Agile methodologies",
+    "Front-end development experience with React.js and other JavaScript frameworks",
+    "Experience with NoSQL databases (MongoDB)",
+    "Experience with RESTful web services and API development",
+  ],
+  gapAnalysis: {
+    critical: [
+      "Golang",
+      "Kubernetes",
+      "DevSecOps experience",
+      "Experience with CI/CD pipelines and tools like Jenkins, Docker",
+    ],
+    important: [
+      "Experience with distributed caching systems like Redis",
+      "Deeper understanding of cloud-native principles and practices",
+    ],
+    "nice-to-have": [
+      "Experience with IBM Cloud",
+      "Experience with Azure",
+      "Experience with Istio",
+      "Experience with Cloudant",
+    ],
+  },
+  improvementOpportunities: [
+    "Quantify achievements in experience section with metrics and numbers to demonstrate impact",
+    "Tailor resume summary and experience descriptions to specifically address the job description requirements, highlighting relevant keywords and skills",
+    'Create a dedicated "Projects" section to showcase personal projects or contributions to open-source projects that demonstrate relevant skills',
+    "Shorten the summary section and focus on the most relevant skills and experience",
+    "Remove irrelevant skills from the skills section, such as older Java versions (Java 6, Java 7) and technologies not mentioned in the job description (e.g., Flutter, Splunk)",
+    "Add certifications related to cloud computing, Kubernetes, or DevSecOps to enhance credibility",
+    "Include links to a portfolio or GitHub profile to showcase projects and code samples",
+  ],
+  roleTransformation: [
+    "Emphasize experience with cloud-native development and microservices architecture",
+    "Highlight experience with building and deploying applications on AWS and other cloud platforms",
+    "Focus on skills related to containerization, orchestration, and CI/CD",
+    "Position experience with Spring Boot as a strong foundation for developing cloud-native applications",
+    "Showcase experience with RESTful API design and development",
+  ],
+  experienceMapping: {
+    "First Command": {
+      matches: [
+        "Developed cloud microservices using Spring Boot",
+        "Worked with microservice architecture using Spring Boot and REST APIs",
+        "Experience with Apache Kafka",
+        "Experience with AWS services (EC2, S3, etc.)",
+        "Experience with Agile/SCRUM methodologies",
+      ],
+      gaps: ["No mention of Golang, Kubernetes, or DevSecOps practices"],
+      transform: [
+        "Frame experience with Spring Boot and microservices as directly applicable to cloud-native development on IBM Cloud",
+        "Highlight experience with building and deploying scalable applications on AWS and relate it to similar tasks on IBM Cloud",
+      ],
     },
-    "keyStrengths": [
-        "Strong communication skills",
-        "Experience with Agile methodologies",
-        "Requirement gathering and analysis skills",
-        "Experience working with stakeholders",
-        "Technical documentation skills",
-        "Problem-solving skills"
-    ],
-    "gapAnalysis": {
-        "critical": [
-            "Deep understanding of infrastructure automation concepts",
-            "Experience with specific automation tools (Ansible, Terraform, Docker)"
-        ],
-        "important": [
-            "Proficiency in creating user stories and managing product backlogs within an Agile framework"
-        ],
-        "nice-to-have": [
-            "Experience with Jira, Trello, or Azure DevOps"
-        ]
+    Lennar: {
+      matches: [
+        "Developed cloud-hosted web applications and REST APIs using Spring Boot",
+        "Experience with Docker",
+        "Experience with AWS services (EC2, S3, etc.)",
+        "Experience with Agile Scrum methodology",
+      ],
+      gaps: ["No mention of Golang, Kubernetes, or DevSecOps practices"],
+      transform: [
+        "Emphasize experience with Docker and containerization as relevant to Kubernetes and container orchestration",
+        "Highlight experience with building and deploying applications on AWS and relate it to similar tasks on IBM Cloud",
+      ],
     },
-    "improvementOpportunities": [
-        "Quantify achievements in resume with metrics and data",
-        "Add location to contact information",
-        "Tailor resume to specifically highlight infrastructure automation experience (if any)",
-        "Streamline resume to one page by removing redundant information and focusing on relevant skills and experience",
-        "Expand on experience with Agile project management tools and methodologies",
-        "Include a portfolio or projects section to showcase relevant work"
-    ],
-    "roleTransformation": [
-        "Highlight experience in process automation and system analysis within previous roles",
-        "Focus on tasks involving requirement gathering, stakeholder collaboration, and technical documentation related to infrastructure or system improvements",
-        "Position experience with scripting and programming languages as a foundation for learning infrastructure automation tools",
-        "Emphasize any experience with DevOps methodologies or working with DevOps teams"
-    ],
-    "experienceMapping": {
-        "Sr. Business System Analyst - Medicaid": "Experience working with stakeholders, gathering requirements, and documenting processes can be framed as relevant to understanding business needs for automation.",
-        "Sr. Salesforce Business Analyst": "Experience with Apex, Visualforce, and Salesforce APIs can be positioned as relevant to scripting and automation within a specific platform.",
-        "Sr. Guidewire Policy Centre Business System Analyst": "Experience with Agile methodologies, JRP sessions, and documenting requirements can be related to the target role's responsibilities.",
-        "Business Analyst": "Experience with Waterfall methodology and technical documentation can be presented as a foundation for Agile development and documentation.",
-        "Jr. Business Analyst": "Experience working with Product Owners and Agile ceremonies can be highlighted as relevant to Agile project management."
+    "CGI Inc": {
+      matches: [
+        "Developed RESTful web services using Spring Boot",
+        "Experience with Spring Boot and microservices",
+        "Experience with JMS and asynchronous communication",
+        "Experience with Agile/SCRUM methodologies",
+      ],
+      gaps: [
+        "No mention of Golang, Kubernetes, or DevSecOps practices",
+        "Limited cloud experience",
+      ],
+      transform: [
+        "Frame experience with Spring Boot and microservices as directly applicable to cloud-native development on IBM Cloud",
+        "Highlight any experience related to cloud technologies or principles, even if not directly using IBM Cloud or AWS",
+      ],
     },
-    "titleSuggestions": {
-        "Sr. Business System Analyst - Medicaid": "Business Analyst with Healthcare Experience",
-        "Sr. Salesforce Business Analyst": "Salesforce Automation Specialist",
-        "Sr. Guidewire Policy Centre Business System Analyst": "Agile Business Analyst with Insurance Industry Experience",
-        "Business Analyst": "Technical Business Analyst",
-        "Jr. Business Analyst": "Associate Agile Business Analyst"
-    },
-    "skillsToEmphasize": [
-        "Agile",
-        "Requirement gathering",
-        "Stakeholder management",
-        "Communication",
-        "Problem-solving",
-        "Technical documentation",
-        "Scripting",
-        "Programming"
-    ],
-    "skillsToRemove": [
-        "Mainframes",
-        "JCL",
-        "Microsoft CRM 3.0",
-        "WinRunner",
-        "Share gate",
-        "Load Runner"
-    ],
-    "isConsultingCompany": false
-}
+  },
+  titleSuggestions: {
+    "Full Stack Developer (First Command)": "Cloud Application Developer",
+    "Full Stack Developer (Lennar)": "Cloud Platform Engineer",
+    "Java/J2EE Developer (CGI Inc)": "Microservices Developer",
+  },
+  skillsToEmphasize: [
+    "Java",
+    "Spring Boot",
+    "Microservices",
+    "AWS",
+    "REST APIs",
+    "Agile/SCRUM",
+    "React.js",
+    "MongoDB",
+    "HTML",
+    "CSS",
+    "JavaScript",
+  ],
+  skillsToRemove: ["Java 6", "Java 7", "Flutter", "Splunk", "IMS", "JSTL"],
+  isConsultingCompany: false,
+};
