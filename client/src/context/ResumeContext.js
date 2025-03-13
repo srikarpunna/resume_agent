@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
+import config from "../utils/config";
 
 // Create context
 const ResumeContext = createContext();
@@ -28,6 +29,9 @@ export const ResumeProvider = ({ children }) => {
   const [processingStage, setProcessingStage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Mock data toggle
+  const [useMockData, setUseMockData] = useState(config.useMockApi);
 
   // Feedback
   const [userFeedback, setUserFeedback] = useState("");
@@ -74,6 +78,8 @@ export const ResumeProvider = ({ children }) => {
     setUserFeedback,
     feedbackApplied,
     setFeedbackApplied,
+    useMockData,
+    setUseMockData,
     resetState,
   };
 

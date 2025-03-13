@@ -14,4 +14,9 @@ const config = {
   }
 };
 
+// Function to update the useMockApi setting
+export const updateMockApiSetting = (value) => {
+  config.useMockApi = value;
+};
+
 export default config; 

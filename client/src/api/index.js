@@ -2,9 +2,6 @@ import axios from "axios";
 import config from "../utils/config";
 import * as mockApi from "./mockApi";
 
-// Only import and use the real API if we're not using mocks
-const useRealApi = !config.useMockApi;
-
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: config.apiBaseUrl,
@@ -76,20 +73,35 @@ const realApiImplementations = {
   },
 };
 
-// Export the appropriate API implementation based on configuration
-const selectedApi = useRealApi ? realApiImplementations : mockApi;
+// Create dynamic proxy functions that check config.useMockApi each time
+export const uploadResume = async (file) => {
+  return config.useMockApi ? mockApi.uploadResume(file) : realApiImplementations.uploadResume(file);
+};
 
-// Export all API functions
-export const {
-  uploadResume,
-  getResume,
-  deleteResume,
-  analyzeResume,
-  analyzeJob,
-  matchResumeJob,
-  optimizeResume,
-  processFeedback
-} = selectedApi;
+export const getResume = async (filename) => {
+  return config.useMockApi ? mockApi.getResume(filename) : realApiImplementations.getResume(filename);
+};
 
-// For debugging - log which API implementation is being used
-console.log(`Using ${useRealApi ? 'REAL' : 'MOCK'} API implementation`);
+export const deleteResume = async (filename) => {
+  return config.useMockApi ? mockApi.deleteResume(filename) : realApiImplementations.deleteResume(filename);
+};
+
+export const analyzeResume = async (resumeText) => {
+  return config.useMockApi ? mockApi.analyzeResume(resumeText) : realApiImplementations.analyzeResume(resumeText);
+};
+
+export const analyzeJob = async (jobDescription) => {
+  return config.useMockApi ? mockApi.analyzeJob(jobDescription) : realApiImplementations.analyzeJob(jobDescription);
+};
+
+export const matchResumeJob = async (resumeData, jobData) => {
+  return config.useMockApi ? mockApi.matchResumeJob(resumeData, jobData) : realApiImplementations.matchResumeJob(resumeData, jobData);
+};
+
+export const optimizeResume = async (resumeData, jobData, matchAnalysis) => {
+  return config.useMockApi ? mockApi.optimizeResume(resumeData, jobData, matchAnalysis) : realApiImplementations.optimizeResume(resumeData, jobData, matchAnalysis);
+};
+
+export const processFeedback = async (feedback, currentResume) => {
+  return config.useMockApi ? mockApi.processFeedback(feedback, currentResume) : realApiImplementations.processFeedback(feedback, currentResume);
+};
