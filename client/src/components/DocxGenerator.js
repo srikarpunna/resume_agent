@@ -68,7 +68,8 @@ class DocxGenerator {
       italic = false, 
       alignment = AlignmentType.LEFT, 
       spacing = 120,
-      indent = null
+      indent = null,
+      fontSize = 22 // Default to 11pt (22 half-points) for everything
     } = options;
     
     const runs = [];
@@ -77,7 +78,7 @@ class DocxGenerator {
         text,
         bold,
         italic,
-        size: bold ? 24 : 22,
+        size: fontSize, // Always use the specified fontSize
       }));
     } else if (Array.isArray(text)) {
       text.forEach(part => {
@@ -85,7 +86,7 @@ class DocxGenerator {
           text: part.text,
           bold: part.bold || bold,
           italic: part.italic || italic,
-          size: part.bold ? 24 : 22,
+          size: part.fontSize || fontSize, // Use part's fontSize if specified, otherwise use default
         }));
       });
     }
@@ -113,21 +114,19 @@ class DocxGenerator {
   addHeader() {
     const contactInfo = this.resumeData.contactInfo || {};
     
-    // Name - make it bigger and bold
+    // Name - make it slightly larger (12pt) and bold
     if (contactInfo.name) {
       this.sections.push(
         this.createParagraph(contactInfo.name, { 
           bold: true, 
           alignment: AlignmentType.CENTER,
-          spacing: 120
+          spacing: 120,
+          fontSize: 24 // Set to 12pt for the name only
         })
       );
     }
     
-    // Contact info on separate lines, left-aligned
-    const contactParts = [];
-    
-    // Email, phone, location
+    // Contact info on separate lines, left-aligned at 11pt
     const contactLine = [];
     if (contactInfo.email) contactLine.push(contactInfo.email);
     if (contactInfo.phone) contactLine.push(contactInfo.phone);
@@ -137,17 +136,19 @@ class DocxGenerator {
       this.sections.push(
         this.createParagraph(contactLine.join(' | '), {
           alignment: AlignmentType.CENTER,
-          spacing: 120
+          spacing: 120,
+          fontSize: 22 // Explicitly set to 11pt (22 half-points)
         })
       );
     }
 
-    // LinkedIn on its own line
+    // LinkedIn on its own line at 11pt
     if (contactInfo.linkedin) {
       this.sections.push(
         this.createParagraph(`LinkedIn: ${contactInfo.linkedin}`, {
           alignment: AlignmentType.CENTER,
-          spacing: 240 // Extra space after the header section
+          spacing: 240, // Extra space after the header section
+          fontSize: 22 // Explicitly set to 11pt (22 half-points)
         })
       );
     }
@@ -159,17 +160,25 @@ class DocxGenerator {
   addSummaries() {
     if (this.resumeData.summaries && this.resumeData.summaries.length > 0) {
       this.resumeData.summaries.forEach(summary => {
-        // Use ALL CAPS and bold for the heading, with a colon
-        const headingText = (summary.heading || 'Summary').toUpperCase() + ":";
+        // Get the raw heading text first
+        let originalHeading = summary.heading || 'Summary';
+        
+        // Remove any existing colons from the end of the original heading
+        originalHeading = originalHeading.replace(/\s*:+\s*$/, '');
+        
+        // Convert to uppercase and add a single colon
+        const headingText = originalHeading.toUpperCase() + ':';
+        
         this.sections.push(
           this.createParagraph(headingText, { 
             bold: true, 
-            spacing: 80 // Reduced spacing after heading
+            spacing: 80, // Reduced spacing after heading
+            fontSize: 22 // Set to 11pt (22 half-points)
           })
         );
         
         if (summary.format === 'bullets') {
-          // Handle bullet points
+          // Handle bullet points with 11pt font
           const bulletPoints = summary.content.split('\n').filter(point => point.trim());
           bulletPoints.forEach(point => {
             const trimmedPoint = point.trim().replace(/^[•\-\*]\s*/, '');
@@ -178,14 +187,18 @@ class DocxGenerator {
                 spacing: 60, // Reduced spacing between bullet points
                 indent: {
                   left: 360 // Reduced indent (360 twips ≈ 0.25 inch instead of 0.5 inch)
-                }
+                },
+                fontSize: 22 // Explicitly set to 11pt
               })
             );
           });
         } else {
-          // Handle paragraph
+          // Handle paragraph with 11pt font
           this.sections.push(
-            this.createParagraph(summary.content || '', { spacing: 120 })
+            this.createParagraph(summary.content || '', { 
+              spacing: 120,
+              fontSize: 22 // Explicitly set to 11pt
+            })
           );
         }
       });
@@ -197,44 +210,62 @@ class DocxGenerator {
    */
   addExperience() {
     if (this.resumeData.experience && this.resumeData.experience.length > 0) {
+      // Remove any existing colons and add a single one
+      let headingText = 'EXPERIENCE'.replace(/\s*:+\s*$/, '') + ':';
+      
       this.sections.push(
-        this.createParagraph('EXPERIENCE:', { bold: true, spacing: 80 })
+        this.createParagraph(headingText, { 
+          bold: true, 
+          spacing: 80,
+          fontSize: 22 // Set to 11pt (22 half-points)
+        })
       );
 
       this.resumeData.experience.forEach(exp => {
-        // Job title
+        // Job title - bold with 11pt font
         this.sections.push(
-          this.createParagraph(exp.title || exp.position || '', { bold: true, spacing: 60 })
+          this.createParagraph(exp.title || exp.position || '', { 
+            bold: true, 
+            spacing: 60,
+            fontSize: 22 // Explicitly set to 11pt
+          })
         );
 
-        // Company and location
+        // Company and location - italic with 11pt font
         const companyLocationText = [
           exp.company,
           exp.location ? `• ${exp.location}` : '',
         ].filter(Boolean).join(' ');
         
         this.sections.push(
-          this.createParagraph(companyLocationText, { italic: true, spacing: 60 })
+          this.createParagraph(companyLocationText, { 
+            italic: true, 
+            spacing: 60,
+            fontSize: 22 // Explicitly set to 11pt
+          })
         );
 
-        // Date range
+        // Date range - 11pt font
         if (exp.duration || (exp.startDate && exp.endDate)) {
           this.sections.push(
-            this.createParagraph(exp.duration || `${exp.startDate} - ${exp.endDate}`, { spacing: 60 })
+            this.createParagraph(exp.duration || `${exp.startDate} - ${exp.endDate}`, { 
+              spacing: 60,
+              fontSize: 22 // Explicitly set to 11pt
+            })
           );
         }
 
-        // Description - make "Description:" label bold
+        // Description - make "Description:" label bold, 11pt font
         if (exp.description) {
           this.sections.push(
             this.createParagraph([
-              { text: "Description: ", bold: true },
-              { text: exp.description }
+              { text: "Description: ", bold: true, fontSize: 22 },
+              { text: exp.description, fontSize: 22 }
             ], { spacing: 60 })
           );
         }
 
-        // Responsibilities
+        // Responsibilities - 11pt font
         if (exp.responsibilities && exp.responsibilities.length > 0) {
           // Remove the "Responsibilities:" header line and just show the bullet points
           
@@ -244,18 +275,19 @@ class DocxGenerator {
                 spacing: 60,
                 indent: {
                   left: 360 // Reduced indent (360 twips ≈ 0.25 inch)
-                }
+                },
+                fontSize: 22 // Explicitly set to 11pt
               })
             );
           });
         }
 
-        // Environment - make "Environment:" label bold
+        // Environment - make "Environment:" label bold, 11pt font
         if (exp.environment) {
           this.sections.push(
             this.createParagraph([
-              { text: "Environment: ", bold: true },
-              { text: exp.environment }
+              { text: "Environment: ", bold: true, fontSize: 22 },
+              { text: exp.environment, fontSize: 22 }
             ], { spacing: 120 })
           );
         }
@@ -268,8 +300,15 @@ class DocxGenerator {
    */
   addSkills() {
     if (this.resumeData.skills) {
+      // Remove any existing colons and add a single one
+      let headingText = 'SKILLS'.replace(/\s*:+\s*$/, '') + ':';
+      
       this.sections.push(
-        this.createParagraph('SKILLS:', { bold: true, spacing: 80 })
+        this.createParagraph(headingText, { 
+          bold: true, 
+          spacing: 80,
+          fontSize: 22 // Set to 11pt (22 half-points)
+        })
       );
 
       // Handle detailed categories format
@@ -291,10 +330,13 @@ class DocxGenerator {
           
           const skillsList = this.resumeData.skills.categories[category].join(', ');
           this.sections.push(
-            this.createParagraph(`• ${formattedCategory}: ${skillsList}`, { 
+            this.createParagraph([
+              { text: `• ${formattedCategory}: `, bold: true, fontSize: 22 },
+              { text: skillsList, fontSize: 22 }
+            ], { 
               spacing: 60,
               indent: {
-                left: 360 // Reduced indent 
+                left: 360
               }
             })
           );
@@ -315,10 +357,13 @@ class DocxGenerator {
           const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
           const skillsList = this.resumeData.skills[category].join(', ');
           this.sections.push(
-            this.createParagraph(`• ${formattedCategory}: ${skillsList}`, { 
+            this.createParagraph([
+              { text: `• ${formattedCategory}: `, bold: true, fontSize: 22 },
+              { text: skillsList, fontSize: 22 }
+            ], { 
               spacing: 60,
               indent: {
-                left: 360 // Reduced indent
+                left: 360
               }
             })
           );
@@ -330,8 +375,9 @@ class DocxGenerator {
           this.createParagraph(`• ${this.resumeData.skills.join(', ')}`, { 
             spacing: 120,
             indent: {
-              left: 360 // Reduced indent
-            }
+              left: 360
+            },
+            fontSize: 22 // Explicitly set to 11pt
           })
         );
       }
@@ -343,27 +389,35 @@ class DocxGenerator {
    */
   addEducation() {
     if (this.resumeData.education && this.resumeData.education.length > 0) {
+      // Remove any existing colons and add a single one
+      let headingText = 'EDUCATION'.replace(/\s*:+\s*$/, '') + ':';
+      
       this.sections.push(
-        this.createParagraph('EDUCATION:', { bold: true, spacing: 80 })
+        this.createParagraph(headingText, { 
+          bold: true, 
+          spacing: 80,
+          fontSize: 22 // Set to 11pt (22 half-points)
+        })
       );
 
       this.resumeData.education.forEach(edu => {
-        // Degree
+        // Degree - bold with 11pt font
         this.sections.push(
           this.createParagraph(`• ${edu.degree || ''}`, { 
             bold: true, 
             spacing: 60,
             indent: {
               left: 360 // Reduced indent
-            }
+            },
+            fontSize: 22 // Explicitly set to 11pt
           })
         );
         
-        // Institution and graduation date - indent this further
+        // Institution and graduation date - indent this further, 11pt font
         this.sections.push(
           this.createParagraph([
-            { text: edu.institution || '', italic: true },
-            { text: edu.graduationDate ? `, ${edu.graduationDate}` : '' }
+            { text: edu.institution || '', italic: true, fontSize: 22 },
+            { text: edu.graduationDate ? `, ${edu.graduationDate}` : '', fontSize: 22 }
           ], { 
             spacing: 60,
             indent: {
@@ -372,50 +426,54 @@ class DocxGenerator {
           })
         );
 
-        // Field of study
+        // Field of study - 11pt font
         if (edu.field) {
           this.sections.push(
             this.createParagraph(`Field of Study: ${edu.field}`, { 
               spacing: 60,
               indent: {
                 left: 720 // Reduced indent
-              }
+              },
+              fontSize: 22 // Explicitly set to 11pt
             })
           );
         }
 
-        // GPA
+        // GPA - 11pt font
         if (edu.gpa) {
           this.sections.push(
             this.createParagraph(`GPA: ${edu.gpa}`, { 
               spacing: 60,
               indent: {
                 left: 720 // Reduced indent
-              }
+              },
+              fontSize: 22 // Explicitly set to 11pt
             })
           );
         }
 
-        // Honors
+        // Honors - 11pt font
         if (edu.honors && edu.honors.length > 0) {
           this.sections.push(
             this.createParagraph(`Honors: ${edu.honors.join(', ')}`, { 
               spacing: 60,
               indent: {
                 left: 720 // Reduced indent
-              }
+              },
+              fontSize: 22 // Explicitly set to 11pt
             })
           );
         }
 
-        // Relevant courses
+        // Relevant courses - 11pt font
         if (edu.relevantCourses && edu.relevantCourses.length > 0) {
           this.sections.push(
             this.createParagraph(`Relevant Courses: ${edu.relevantCourses.join(', ')}`, { 
               spacing: 120,
               indent: {
                 left: 720 // Reduced indent
-              }
+              },
+              fontSize: 22 // Explicitly set to 11pt
             })
           );
         }
@@ -428,8 +486,15 @@ class DocxGenerator {
    */
   addCertifications() {
     if (this.resumeData.certifications && this.resumeData.certifications.length > 0) {
+      // Remove any existing colons and add a single one
+      let headingText = 'CERTIFICATIONS'.replace(/\s*:+\s*$/, '') + ':';
+      
       this.sections.push(
-        this.createParagraph('CERTIFICATIONS:', { bold: true, spacing: 80 })
+        this.createParagraph(headingText, { 
+          bold: true, 
+          spacing: 80,
+          fontSize: 22 // Set to 11pt (22 half-points)
+        })
       );
 
       this.resumeData.certifications.forEach(cert => {
@@ -449,7 +514,8 @@ class DocxGenerator {
             spacing: 60,
             indent: {
               left: 360 // Reduced indent
-            }
+            },
+            fontSize: 22 // Explicitly set to 11pt
           })
         );
       });
