@@ -53,7 +53,17 @@ Extract all relevant information and format your response as a comprehensive JSO
     soft: Array of soft skills (communication, leadership, etc.)
     certifications: Array of professional certifications
     languages: Array of language proficiencies if mentioned
-    categories: Object grouping skills by category (e.g., "Programming": ["JavaScript", "Python"])
+    categories: {
+      programming_languages: Array of programming languages (e.g., Java, JavaScript, Python)
+      frameworks_libraries: Array of frameworks and libraries (e.g., Spring, React.js, Angular)
+      web_technologies: Array of web technologies (e.g., HTML, CSS, AJAX)
+      databases: Array of database technologies (e.g., Oracle, MySQL, MongoDB)
+      devops_tools: Array of DevOps and tooling skills (e.g., Git, Jenkins, Docker)
+      cloud_platforms: Array of cloud platform skills (e.g., AWS, Azure, Google Cloud)
+      testing: Array of testing tools and methodologies (e.g., JUnit, Selenium, Mocha)
+      soft_skills: Array of soft skills (e.g., Communication, Teamwork)
+      // Add other appropriate categories as needed based on resume content
+    }
   }
 - education: [
     Array of education entries, each containing:

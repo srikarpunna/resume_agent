@@ -6,10 +6,16 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Divider,
+  Tooltip,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import PrintIcon from "@mui/icons-material/Print";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import ReplayIcon from "@mui/icons-material/Replay";
+import HelpIcon from "@mui/icons-material/Help";
 import { useResumeContext } from "../context/ResumeContext";
 import { pdf } from "@react-pdf/renderer";
 import {
@@ -19,7 +25,10 @@ import {
   View,
   StyleSheet,
   Font,
+  Link,
 } from "@react-pdf/renderer";
+import DocxGenerator from "./DocxGenerator";
+import html2pdf from "html2pdf.js";
 
 // Register fonts
 Font.register({
@@ -228,6 +237,44 @@ const ResumePDF = ({ resume }) => {
       return <Text style={{ fontSize: 10 }}>No skills listed</Text>;
     }
 
+    // Handle detailed categories format
+    if (
+      typeof resume.skills === "object" &&
+      !Array.isArray(resume.skills) &&
+      resume.skills.categories &&
+      typeof resume.skills.categories === "object" &&
+      !Array.isArray(resume.skills.categories) &&
+      Object.keys(resume.skills.categories).length > 0
+    ) {
+      const categories = Object.keys(resume.skills.categories);
+      
+      return (
+        <>
+          {categories.map((category, catIndex) => {
+            if (!resume.skills.categories[category] || resume.skills.categories[category].length === 0) {
+              return null;
+            }
+            
+            // Format the category name (replace underscores with spaces and capitalize)
+            const formattedCategory = category.charAt(0).toUpperCase() + 
+              category.slice(1).replace(/_/g, ' ');
+            
+            return (
+              <View key={`cat-${catIndex}`} style={{ marginBottom: 5 }}>
+                <Text style={{ fontSize: 10 }}>
+                  <Text style={{ fontWeight: "bold" }}>
+                    {formattedCategory}:{" "}
+                  </Text>
+                  {resume.skills.categories[category].join(", ")}
+                </Text>
+              </View>
+            );
+          })}
+        </>
+      );
+    }
+    
+    // Handle basic categories format (technical, soft, tools)
     if (Array.isArray(resume.skills)) {
       return resume.skills.map((skill, index) => (
         <Text key={index} style={styles.skill}>
@@ -238,37 +285,37 @@ const ResumePDF = ({ resume }) => {
     }
 
     if (typeof resume.skills === "object") {
-      // Check if it's the categorized skills format
-      const hasCategories =
+      // Check if it's the basic categorized skills format
+      const hasBasicCategories =
         resume.skills.technical || resume.skills.soft || resume.skills.tools;
 
-      if (hasCategories) {
+      if (hasBasicCategories) {
         return (
           <>
             {resume.skills.technical && resume.skills.technical.length > 0 && (
               <View style={{ marginBottom: 5 }}>
-                <Text style={{ fontSize: 10, fontWeight: "bold" }}>
-                  Technical:{" "}
-                </Text>
                 <Text style={{ fontSize: 10 }}>
+                  <Text style={{ fontWeight: "bold" }}>
+                    Technical:{" "}
+                  </Text>
                   {resume.skills.technical.join(", ")}
                 </Text>
               </View>
             )}
             {resume.skills.soft && resume.skills.soft.length > 0 && (
               <View style={{ marginBottom: 5 }}>
-                <Text style={{ fontSize: 10, fontWeight: "bold" }}>Soft: </Text>
                 <Text style={{ fontSize: 10 }}>
+                  <Text style={{ fontWeight: "bold" }}>Soft: </Text>
                   {resume.skills.soft.join(", ")}
                 </Text>
               </View>
             )}
             {resume.skills.tools && resume.skills.tools.length > 0 && (
               <View style={{ marginBottom: 5 }}>
-                <Text style={{ fontSize: 10, fontWeight: "bold" }}>
-                  Tools:{" "}
-                </Text>
                 <Text style={{ fontSize: 10 }}>
+                  <Text style={{ fontWeight: "bold" }}>
+                    Tools:{" "}
+                  </Text>
                   {resume.skills.tools.join(", ")}
                 </Text>
               </View>
@@ -364,12 +411,11 @@ const ResumePDF = ({ resume }) => {
           <View style={styles.skillsContainer}>{formatSkillsForPDF()}</View>
         </View>
 
-        {/* Education */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Education</Text>
-
-          {educationData && educationData.length > 0 ? (
-            educationData.map((edu, index) => (
+        {/* Education - Only show if education data exists */}
+        {educationData && educationData.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Education</Text>
+            {educationData.map((edu, index) => (
               <View key={index} style={styles.educationItem}>
                 <Text style={styles.degree}>{edu.degree || ""}</Text>
                 <View
@@ -395,11 +441,9 @@ const ResumePDF = ({ resume }) => {
                     </Text>
                   )}
               </View>
-            ))
-          ) : (
-            <Text style={{ fontSize: 10 }}>No education listed</Text>
-          )}
-        </View>
+            ))}
+          </View>
+        )}
 
         {/* Certifications */}
         {resume.certifications && resume.certifications.length > 0 && (
@@ -444,7 +488,40 @@ const ResumeDownload = () => {
   const formatSkills = () => {
     if (!optimizedResume.skills) return "No skills listed";
 
-    // If skills is an object with categories
+    // If skills has detailed categories
+    if (
+      typeof optimizedResume.skills === "object" &&
+      !Array.isArray(optimizedResume.skills) &&
+      optimizedResume.skills.categories &&
+      typeof optimizedResume.skills.categories === "object" &&
+      !Array.isArray(optimizedResume.skills.categories)
+    ) {
+      const categories = Object.keys(optimizedResume.skills.categories).filter(
+        (category) =>
+          Array.isArray(optimizedResume.skills.categories[category]) &&
+          optimizedResume.skills.categories[category].length > 0
+      );
+
+      if (categories.length === 0) return "No skills listed";
+
+      return categories
+        .map(
+          (category) => {
+            // Format the category name (replace underscores with spaces and capitalize)
+            const formattedCategory = category.charAt(0).toUpperCase() + 
+              category.slice(1).replace(/_/g, ' ');
+            
+            return `
+              <div class="skill-category" style="margin-bottom: 6px;">
+                <div><span style="font-weight: bold;">${formattedCategory}:</span> ${optimizedResume.skills.categories[category].join(", ")}</div>
+              </div>
+            `;
+          }
+        )
+        .join("");
+    }
+    
+    // If skills is an object with basic categories
     if (
       typeof optimizedResume.skills === "object" &&
       !Array.isArray(optimizedResume.skills)
@@ -479,7 +556,7 @@ const ResumeDownload = () => {
   // Generate education section HTML
   const generateEducationHTML = () => {
     if (!optimizedResume.education || !optimizedResume.education.length) {
-      return "<div>No education listed</div>";
+      return "";
     }
 
     return optimizedResume.education
@@ -650,11 +727,13 @@ const ResumeDownload = () => {
           <div style="font-size: 12px;">${formatSkills()}</div>
         </div>
 
-        <!-- Education -->
+        <!-- Education - Only show if education data exists -->
+        ${optimizedResume.education && optimizedResume.education.length > 0 ? `
         <div style="margin-bottom: 10px;">
           <h2 style="font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin: 0 0 8px 0;">Education</h2>
           ${generateEducationHTML()}
         </div>
+        ` : ''}
         
         <!-- Certifications (if available) -->
         ${generateCertificationsHTML()}
@@ -869,156 +948,58 @@ const ResumeDownload = () => {
                 font-size: 16px;
                 border-bottom: 1px solid #ccc;
                 padding-bottom: 3px;
-                margin: 10px 0 8px 0;
+                margin: 0 0 8px 0;
               }
-              .contact-info {
-                text-align: center;
-                margin-bottom: 12px;
-                font-size: 12px;
-              }
-              .contact-info a {
-                color: #0077B5;
-                text-decoration: none;
-              }
-              .section {
-                margin-bottom: 10px;
-                page-break-inside: avoid;
-              }
-              .experience-item {
+              .skill-category {
                 margin-bottom: 8px;
-                page-break-inside: avoid;
-              }
-              .position {
-                font-weight: bold;
-                font-size: 14px;
-              }
-              .company {
-                font-weight: bold;
-                font-size: 12px;
-                margin-bottom: 4px;
-              }
-              .duration {
-                font-style: italic;
-                font-size: 12px;
               }
               .education-item {
-                margin-bottom: 8px;
-                page-break-inside: avoid;
+                margin-bottom: 10px;
               }
               .degree {
                 font-weight: bold;
-                font-size: 14px;
-                margin-bottom: 4px;
-              }
-              .institution {
-                font-style: italic;
-                font-size: 12px;
-              }
-              .education-year {
-                font-size: 12px;
+                margin-bottom: 2px;
               }
               .education-details {
                 display: flex;
                 justify-content: space-between;
-                margin-bottom: 3px;
               }
-              .skill-category {
+              .experience-item {
+                margin-bottom: 15px;
+              }
+              .experience-header {
                 margin-bottom: 5px;
               }
+              .position {
+                font-weight: bold;
+              }
+              .company {
+                font-style: italic;
+              }
+              .duration {
+                float: right;
+              }
               ul {
-                margin: 4px 0;
-                padding-left: 18px;
+                margin-top: 5px;
+                margin-bottom: 5px;
+                padding-left: 20px;
               }
               li {
                 margin-bottom: 2px;
-                font-size: 12px;
               }
               @media print {
-                @page { 
-                  margin: 10mm; 
-                  size: A4;
+                body {
+                  font-size: 11px;
                 }
-                body { 
-                  -webkit-print-color-adjust: exact;
-                  print-color-adjust: exact;
-                }
-                .section, h2, .experience-item, .education-item { 
-                  page-break-inside: avoid; 
+                .container {
+                  padding: 0;
                 }
               }
             </style>
           </head>
-          <body>
+          <body onload="window.print(); window.setTimeout(function() { window.close(); }, 500);">
             <div class="container">
-              <!-- Header -->
-              <h1>${optimizedResume?.contactInfo?.name || ""}</h1>
-              <div class="contact-info">
-                ${formatContactInfo()}
-              </div>
-              
-              <!-- Summaries -->
-              ${optimizedResume.summaries
-                ?.map(
-                  (summary) => `
-                <div style="margin-bottom: 10px;">
-                  <h2 style="font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin: 0 0 8px 0;">${
-                    summary.heading
-                  }</h2>
-                  ${
-                    summary.format === "bullets"
-                      ? `<ul style="margin: 0; padding-left: 20px;">
-                        ${summary.content
-                          .split("\\n")
-                          .filter((line) => line.trim())
-                          .map(
-                            (line) =>
-                              `<li>${line
-                                .replace(/^[\s]*[•\-\*]\s*/, "")
-                                .trim()}</li>`
-                          )
-                          .join("")}
-                      </ul>`
-                      : summary.format === "mixed"
-                      ? summary.content
-                          .split("\\n")
-                          .map((line) => {
-                            const isBullet = /^[\s]*[•\-\*]/.test(line);
-                            const cleanLine = isBullet
-                              ? line.replace(/^[\s]*[•\-\*]\s*/, "").trim()
-                              : line.trim();
-                            if (!cleanLine) return "";
-                            return isBullet
-                              ? `<div style="margin-left: 20px;">• ${cleanLine}</div>`
-                              : `<div>${cleanLine}</div>`;
-                          })
-                          .join("")
-                      : `<div>${summary.content}</div>`
-                  }
-                </div>
-              `
-                )
-                .join("")}
-              
-              <!-- Experience -->
-              <div class="section">
-                <h2>Experience</h2>
-                ${generateExperienceHTML()}
-              </div>
-              
-              <!-- Skills -->
-              <div class="section">
-                <h2>Skills</h2>
-                <div>${formatSkills()}</div>
-              </div>
-              
-              <!-- Education -->
-              <div class="section">
-                <h2>Education</h2>
-                ${generateEducationHTML()}
-              </div>
-              
-              <!-- Certifications -->
-              ${generateCertificationsHTML()}
+              ${generateResumeHTML()}
             </div>
             <script>
               window.onload = function() {
@@ -1037,6 +1018,23 @@ const ResumeDownload = () => {
     } catch (error) {
       console.error("Error printing resume:", error);
       setError("Error printing resume: " + error.message);
+      setIsLoading(false);
+    }
+  };
+
+  // Function to handle DOCX generation and download
+  const handleDocxGeneration = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const docxGenerator = new DocxGenerator(optimizedResume);
+      await docxGenerator.generateAndDownload();
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error generating DOCX:', error);
+      setError('Failed to generate Word document. Please try again.');
       setIsLoading(false);
     }
   };
@@ -1067,7 +1065,7 @@ const ResumeDownload = () => {
           Preview PDF
         </Button>
 
-        {/* Download Button */}
+        {/* Download PDF Button */}
         <Button
           variant="contained"
           color="primary"
@@ -1078,6 +1076,19 @@ const ResumeDownload = () => {
           disabled={isLoading}
         >
           Download PDF
+        </Button>
+
+        {/* Download DOCX Button */}
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={
+            isLoading ? <CircularProgress size={16} /> : <DownloadIcon />
+          }
+          onClick={handleDocxGeneration}
+          disabled={isLoading}
+        >
+          Download DOCX
         </Button>
 
         {/* Print Button */}

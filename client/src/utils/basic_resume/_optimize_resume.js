@@ -222,7 +222,49 @@ export const _optimize_resume = {
     ],
     certifications: [],
     languages: [],
-    categories: {},
+    categories: {
+      programming_languages: [
+        "Java",
+        "JavaScript",
+      ],
+      frameworks_libraries: [
+        "Spring Boot",
+        "Spring MVC",
+        "React.js",
+        "Node.js",
+      ],
+      web_technologies: [
+        "HTML",
+        "CSS",
+        "REST",
+        "API",
+      ],
+      databases: [
+        "SQL",
+        "NoSQL",
+      ],
+      devops_tools: [
+        "Git",
+        "Jenkins",
+        "Docker",
+        "Kubernetes",
+      ],
+      cloud_platforms: [
+        "AWS",
+      ],
+      architecture: [
+        "Microservices",
+      ],
+      methodologies: [
+        "Agile",
+      ],
+      soft_skills: [
+        "Communication",
+        "Analytical Abilities",
+        "Teamwork",
+        "Interpersonal Skills",
+      ]
+    },
   },
   education: [
     {

@@ -412,15 +412,75 @@ const SkillsSection = ({ skills, originalSkills, isOptimized }) => {
   let originalSkillsArray = [];
   let allSkillCategories = [];
 
-  // Check if skills is an object with categories (new format from enhanced AI)
-  const isSkillsObject =
+  // Check if skills has a categories object (preferred format)
+  const hasDetailedCategories = 
+    skills && 
+    typeof skills === "object" &&
+    !Array.isArray(skills) &&
+    skills.categories && 
+    typeof skills.categories === "object" &&
+    !Array.isArray(skills.categories) &&
+    Object.keys(skills.categories).length > 0;
+
+  // Check if skills is an object with basic categories (technical, soft, tools)
+  const hasBasicCategories =
     skills &&
     typeof skills === "object" &&
     !Array.isArray(skills) &&
     (skills.technical || skills.soft || skills.tools);
 
-  if (isSkillsObject) {
-    // New format: skills is an object with categories
+  if (hasDetailedCategories) {
+    // New format with detailed subcategories
+    allSkillCategories = Object.keys(skills.categories);
+    
+    // Create a flat array of all skills for comparison
+    skillsArray = allSkillCategories.reduce((acc, category) => {
+      if (skills.categories[category] && Array.isArray(skills.categories[category])) {
+        return [...acc, ...skills.categories[category]];
+      }
+      return acc;
+    }, []);
+
+    // Handle original skills for comparison
+    if (
+      originalSkills &&
+      typeof originalSkills === "object" &&
+      !Array.isArray(originalSkills) &&
+      originalSkills.categories &&
+      typeof originalSkills.categories === "object"
+    ) {
+      originalSkillsArray = Object.keys(originalSkills.categories).reduce((acc, category) => {
+        if (
+          originalSkills.categories[category] &&
+          Array.isArray(originalSkills.categories[category])
+        ) {
+          return [...acc, ...originalSkills.categories[category]];
+        }
+        return acc;
+      }, []);
+    } else if (
+      originalSkills &&
+      typeof originalSkills === "object" &&
+      !Array.isArray(originalSkills)
+    ) {
+      // If original has standard categories but not detailed ones
+      const standardCategories = ["technical", "soft", "tools"];
+      originalSkillsArray = standardCategories.reduce((acc, category) => {
+        if (
+          originalSkills[category] &&
+          Array.isArray(originalSkills[category])
+        ) {
+          return [...acc, ...originalSkills[category]];
+        }
+        return acc;
+      }, []);
+    } else if (Array.isArray(originalSkills)) {
+      originalSkillsArray = originalSkills;
+    } else if (originalSkills) {
+      originalSkillsArray = originalSkills.split(/,\s*/);
+    }
+  } else if (hasBasicCategories) {
+    // Format with basic categories (technical, soft, tools)
     allSkillCategories = ["technical", "soft", "tools"];
 
     // Flatten all skill categories into a single array
@@ -472,6 +532,11 @@ const SkillsSection = ({ skills, originalSkills, isOptimized }) => {
   const isNewSkill = (skill) =>
     isOptimized && !originalSkillsArray.includes(skill);
 
+  // Function to format category name for display
+  const formatCategoryName = (category) => {
+    return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ');
+  };
+
   return (
     <Box className="mb-4">
       <Typography
@@ -491,8 +556,32 @@ const SkillsSection = ({ skills, originalSkills, isOptimized }) => {
         )}
       </Typography>
 
-      {isSkillsObject && isOptimized ? (
-        // Render categorized skills section for the new format
+      {hasDetailedCategories ? (
+        // Render detailed categorized skills (Programming Languages, Frameworks, etc.)
+        <Box className="ml-4">
+          {allSkillCategories.map((category) => {
+            if (!skills.categories[category] || !skills.categories[category].length) return null;
+
+            return (
+              <Box key={category} className="mb-2">
+                <Typography variant="body2">
+                  <span className="font-semibold text-gray-700">{formatCategoryName(category)}:</span>{" "}
+                  {skills.categories[category].map((skill, index) => (
+                    <span 
+                      key={`${category}-${index}`}
+                      className={isNewSkill(skill) ? "text-green-600 font-medium" : ""}
+                    >
+                      {skill}
+                      {index < skills.categories[category].length - 1 ? ", " : ""}
+                    </span>
+                  ))}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+      ) : hasBasicCategories ? (
+        // Render basic categorized skills section (technical, soft, tools)
         <Box>
           {allSkillCategories.map((category) => {
             if (!skills[category] || !skills[category].length) return null;
@@ -619,60 +708,58 @@ const ResumeRenderer = ({ resume, originalResume, isOptimized = false }) => {
         isOptimized={isOptimized}
       />
 
-      {/* Education */}
-      <Typography variant="subtitle1" className="font-bold mb-2">
-        Education
-      </Typography>
-      {Array.isArray(resume.education) ? (
-        resume.education.map((edu, index) => {
-          // Find if this education is new
-          const isNewEducation =
-            isOptimized &&
-            !originalResume?.education?.some(
-              (oe) =>
-                oe.institution === edu.institution && oe.degree === edu.degree
-            );
+      {/* Education - Only show if education data exists */}
+      {Array.isArray(resume.education) && resume.education.length > 0 && (
+        <>
+          <Typography variant="subtitle1" className="font-bold mb-2">
+            Education
+          </Typography>
+          {resume.education.map((edu, index) => {
+            // Find if this education is new
+            const isNewEducation =
+              isOptimized &&
+              !originalResume?.education?.some(
+                (oe) =>
+                  oe.institution === edu.institution && oe.degree === edu.degree
+              );
 
-          return (
-            <Box
-              key={index}
-              className={`mb-1 ${isNewEducation ? "highlight-optimized" : ""}`}
-            >
-              <Typography variant="body1" className="font-semibold">
-                {edu.degree}
-                {isNewEducation && (
-                  <Chip
-                    label="New"
-                    size="small"
-                    color="success"
-                    className="ml-2"
-                    sx={{ height: "16px", fontSize: "0.6rem" }}
-                  />
+            return (
+              <Box
+                key={index}
+                className={`mb-1 ${isNewEducation ? "highlight-optimized" : ""}`}
+              >
+                <Typography variant="body1" className="font-semibold">
+                  {edu.degree}
+                  {isNewEducation && (
+                    <Chip
+                      label="New"
+                      size="small"
+                      color="success"
+                      className="ml-2"
+                      sx={{ height: "16px", fontSize: "0.6rem" }}
+                    />
+                  )}
+                </Typography>
+                <Box className="flex justify-between">
+                  <Typography variant="body2" className="italic">
+                    {edu.institution}
+                  </Typography>
+                  <Typography variant="body2">{edu.year}</Typography>
+                </Box>
+                {edu.specialization && (
+                  <Typography variant="body2" className="mt-1">
+                    Specialization: {edu.specialization}
+                  </Typography>
                 )}
-              </Typography>
-              <Box className="flex justify-between">
-                <Typography variant="body2" className="italic">
-                  {edu.institution}
-                </Typography>
-                <Typography variant="body2">{edu.year}</Typography>
+                {edu.relevantCoursework && edu.relevantCoursework.length > 0 && (
+                  <Typography variant="body2" className="mt-1">
+                    Relevant Coursework: {edu.relevantCoursework.join(", ")}
+                  </Typography>
+                )}
               </Box>
-              {edu.specialization && (
-                <Typography variant="body2" className="mt-1">
-                  Specialization: {edu.specialization}
-                </Typography>
-              )}
-              {edu.relevantCoursework && edu.relevantCoursework.length > 0 && (
-                <Typography variant="body2" className="mt-1">
-                  Relevant Coursework: {edu.relevantCoursework.join(", ")}
-                </Typography>
-              )}
-            </Box>
-          );
-        })
-      ) : (
-        <Typography variant="body2">
-          No education information available
-        </Typography>
+            );
+          })}
+        </>
       )}
     </Box>
   );

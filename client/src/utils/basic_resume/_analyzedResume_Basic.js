@@ -248,7 +248,76 @@ export const _analyzedResume_Basic = {
     ],
     certifications: [],
     languages: [],
-    categories: {},
+    categories: {
+      programming_languages: [
+        "Java 11",
+        "Java 8",
+        "Java 7",
+        "Java 6",
+        "JavaScript",
+      ],
+      frameworks_libraries: [
+        "Spring",
+        "Spring Boot",
+        "Hibernate",
+        "React.js",
+        "Redux",
+        "Node.js",
+        "React Native",
+        "jQuery",
+        "Bootstrap",
+        "EJB",
+        "Java Beans",
+        "JSTL",
+      ],
+      web_technologies: [
+        "HTML5",
+        "CSS3",
+        "AJAX",
+        "XML",
+        "XPath",
+        "JSP",
+        "JDBC"
+      ],
+      databases: [
+        "Oracle",
+        "SQL Server",
+        "DB2",
+        "MySQL"
+      ],
+      devops_tools: [
+        "Git",
+        "SVN",
+        "AWS Code Deploy",
+        "AWS Code Pipeline",
+        "Jira",
+        "Bugzilla",
+        "Eclipse",
+        "PL/SQL Developer"
+      ],
+      servers_platforms: [
+        "IBM WebSphere",
+        "JBoss",
+        "BEA Web Logic",
+        "Apache Tomcat"
+      ],
+      operating_systems: [
+        "UNIX",
+        "Linux",
+        "Windows"
+      ],
+      other_tools: [
+        "Splunk",
+        "Flutter",
+        "IMS"
+      ],
+      soft_skills: [
+        "Communication",
+        "Analytical Abilities",
+        "Teamwork",
+        "Interpersonal Skills",
+      ]
+    },
   },
   education: [
     {
