@@ -8,7 +8,8 @@
     "server": "cd server && yarn server",
     "start": "cd server && node index.js",
     "dev": "concurrently \"yarn server\" \"yarn client\"",
-    "install-all": "yarn install && cd client && yarn install && cd ../server && yarn install"
+    "install-all": "yarn install && cd client && yarn install && cd ../server && yarn install",
+    "build": "yarn install-all && cd client && yarn build"
   },
   "dependencies": {
     "concurrently": "^8.0.1",

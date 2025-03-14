@@ -56,11 +56,16 @@ setInterval(() => {
 
 // Serve static assets if in production
 if (process.env.NODE_ENV === "production") {
-  // Set static folder
-  app.use(express.static("client/build"));
+  // Set static folder with absolute path
+  const clientBuildPath = path.resolve(__dirname, "../client/build");
+  console.log("Serving static files from:", clientBuildPath);
+  
+  app.use(express.static(clientBuildPath));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client", "build", "index.html"));
+    const indexHtmlPath = path.resolve(clientBuildPath, "index.html");
+    console.log("Serving index.html from:", indexHtmlPath);
+    res.sendFile(indexHtmlPath);
   });
 }
 
