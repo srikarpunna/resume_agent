@@ -10,7 +10,7 @@
     "dev": "concurrently \"yarn server\" \"yarn client\"",
     "install-all": "yarn install && cd client && yarn install && cd ../server && yarn install",
     "build": "yarn install && cd client && yarn install && yarn build && cd .. && cd server && yarn install",
-    "render-build": "npm install && cd client && npm install && npm run build && cd ../server && npm install"
+    "render-build": "yarn install && cd client && yarn install && CI=false yarn build && cd .. && cd server && yarn install"
   },
   "dependencies": {
     "concurrently": "^8.0.1",
