@@ -9,7 +9,8 @@
     "start": "cd server && node index.js",
     "dev": "concurrently \"yarn server\" \"yarn client\"",
     "install-all": "yarn install && cd client && yarn install && cd ../server && yarn install",
-    "build": "yarn install-all && cd client && yarn build"
+    "build": "yarn install && cd client && yarn install && yarn build && cd .. && cd server && yarn install",
+    "render-build": "npm install && cd client && npm install && npm run build && cd ../server && npm install"
   },
   "dependencies": {
     "concurrently": "^8.0.1",
